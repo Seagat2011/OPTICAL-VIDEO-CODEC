@@ -1,0 +1,69 @@
+<html xmlns="http://www.w3.org/1999/xhtml" hasBrowserHandlers="true">
+<head>
+<title>Primes engine 1.0.0.0</title>
+<meta charset="utf-8">
+<style>
+textarea#presult {
+  width : 73%; 
+  height : 83%; 
+  overflow : auto;
+  font-style : monospace;
+  font-size : 10pt;
+  font-color : #202020;
+}
+</style>
+<script src=primes_Worker.js></script>
+<script>
+
+Math.__proto__.factorial = function(n){
+  var ret = 1
+  if(n>1){
+    ret = n*this.factorial(n-1)
+  }
+  return ret
+}
+
+Math.__proto__.factorialsUp2N = function(n){
+  var ret = []
+  for(var i=0;i<n;i++){
+    ret.push(this.factorial(i))
+  }
+  return ret
+}
+
+function spacer(i){
+  var sp = ""
+  if(i<1000)
+    sp += "0"
+  if(i<100)
+    sp += "0"
+  if(i<10)
+    sp += "0"
+  return sp
+}
+
+function pgen(){
+  var N = 171
+  var res = {}
+  var pw = new Worker("primes_Worker.js")
+  pw.addEventListener("message",function(e){
+    if(e.data.tgt === "pgen"){
+      var factorial = res.factorial = Math.factorialsUp2N(N)
+      res.primes = e.data.primesUp2N
+      presult.value = "\tprimes\tfactorial\n"
+      res.primes.map(function(n,i){
+        presult.value += spacer(i)+i+".\t"+n+"\t"+factorial[i]+"\n"
+      })
+    }
+  },"primes.htm")
+  pw.postMessage({func:"Math.primesUp2N",N:N,NMax:N})
+  presult.value = "Working..."
+}
+
+</script>
+</head>
+<body>
+<input type=button value="Generate primes" onclick="pgen()"/>  <input type=button value="clear source window" onclick="javascript:presult.value=''"/> <br>
+<textarea id=presult></textarea>
+<body>
+</html>

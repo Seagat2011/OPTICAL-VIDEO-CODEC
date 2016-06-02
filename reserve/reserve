@@ -1,0 +1,138 @@
+Math.__proto__.stringOP = function(op,l,r){
+  var status = {
+    "add":function(lhs,rhs){},
+    "sub":function(lhs,rhs){},
+    "div":function(lhs,rhs){},
+    "pow":function(lhs,rhs){},
+    "mul":function(lhs,rhs){
+      var row = rhs.length <= lhs.length ? lhs : rhs
+      var col = rhs.length <= lhs.length ? rhs : lhs
+      var ret = []
+      var tmp = []
+      //var n = col.length-1
+      var k = 0
+      col.map(function(v,i){
+      /*
+        if(!tmp[i]){
+          tmp[i] = 0
+        }
+        */
+        row.map(function(w,j){
+          if(!tmp[i+j]){
+            tmp[i+j] = 0
+          }
+          tmp[i+j] += v * w
+          return w
+        })
+        /*
+        if(n--){  // retain place-value //
+          k++
+        }
+        */
+        return v
+      })
+      tmp.map(function(u,i,me){
+        if(u>9){
+          var w = u
+          u = Math.floor(u%10)
+          if(!ret[i+1]){
+            ret[i+1] = 0
+          }
+          ret[i+1] += Math.floor(w/10%10)
+        }
+        if(i in ret && (ret[i]+u)>9){
+          var w = ret[i] + u
+          ret[i] = Math.floor(w%10)
+          if(!ret[i+1]){
+            ret[i+1] = 0
+          }
+          ret[i+1] += Math.floor(w/10%10)
+        }
+        else
+        if(i in ret){
+          ret[i] += u
+        }
+        else{
+          ret[i] = u        
+        }
+      })
+      return ret
+    },
+  }
+  return status[op](l,r) || Error("Math::stringOP failed ",op,l,r)
+}
+
+      /*
+      if(col.length>1){ // retain place-value //
+        var k = col.length-1
+        while(k--){
+          row.unshift(0)
+        }
+      }
+      */
+
+function g_factorialSt(n){
+  var ret = [1]
+  if(n[0]>1){
+    var n2 = n.slice(0)
+    n2[0]--
+    var w = n.join('')+n2.join('')
+    if(g_lookup[w]){
+      ret = g_lookup[w]
+    }
+    else{
+      g_lookup[w] = ret = Math.stringOP('mul',n,g_factorialSt(n2))
+    }
+  }
+  else
+  if(n.length>1){
+    var carryGen = false
+    var tmp = n.slice(0)
+    var n2 = tmp.map(function(u,i){ // exec borrow with carry
+      if(i==0 && --u<0){
+        u = 9
+        carryGen = true
+      }
+      else
+      if(carryGen){
+        if(--u<0){
+          u = 9      
+        }
+        else{
+          carryGen = false
+        }
+      }
+      return u
+    })
+    var w = n.join('')+n2.join('')
+    if(g_lookup[w]){
+      ret = g_lookup[w]
+    }
+    else{
+      g_lookup[w] = ret = Math.stringOP('mul',n,g_factorialSt(n2))
+    }
+  }
+  return ret
+}
+
+  /*
+    var n2 = n-1
+    ret = this.stringOP('mul',
+      n.toString().split('').reverse(), // [0] => LSB
+      this.factorialSt(n2.toString().split('').reverse()))
+      */
+    //var s1 = (n-1).toString().split('').reverse()
+    //var s0 = n.toString().split('').reverse()
+    
+    /*
+    n *= this.factorialSt(n-1)
+    var tmp = []
+    for(j=305;j>-1;j--){
+      var w = n - Math.floor(n%Math.pow(10,j))
+      if(w>0){
+        tmp.push(w)
+        n -= w
+      }
+    }
+    ret = tmp
+    */

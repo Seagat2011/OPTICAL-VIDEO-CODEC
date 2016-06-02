@@ -1,0 +1,495 @@
+<html xmlns="http://www.w3.org/1999/xhtml" hasBrowserHandlers="true">
+<head>
+<title>16K Suffix Tree Generator 1.0.0.0</title>
+<meta charset="utf-8">
+<style>
+textarea {
+  width : 73%; 
+  height : 83%; 
+  overflow : auto;
+  font-style : monospace;
+  font-size : 10pt;
+  font-color : #808080;
+}
+</style>
+<script>
+
+/* 
+
+  Copyright (c) 2016, Seagat2011
+  All rights reserved.
+
+  This software is accompanied by a copy of the GNU v2 license!
+
+  Should any portion of the following copyright and permission notice interfere
+  with the spirit of the GNU v2 license, the GNU v2 license shall override and 
+  apply:
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to
+  deal in the Software without restriction, including without limitation the
+  rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+  sell copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in
+  all copies or substantial portions of the Software.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+  ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES
+  LOSS OF USE, DATA, OR PROFITS OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+  ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+  TITLE
+    16K VIDEO CODEC algorithm
+  
+  DESCRIPTION
+    encode or decode a 16K video frame encoded 
+    as a higher base
+    
+  AUTHOR
+    Seagat2011
+  
+  INPUT
+    bytestream
+    
+      61 64 64 45 76 65 6e 74 4c 69 73 74 65 6e 65 72 28 22 6d 65 73 73 61 67 65 
+      22 2c 6d 79 46 75 6e 63 2c 22 31 36 4b 5f 63 6f 64 65 63 2e 68 74 6d 22 29 
+      0a 0a 66 75 6e 63 74 69 6f 6e 20 6d 79 46 75 6e 63 28 65 29 7b 0a 0a 7d
+    
+  OUTPUT
+    a condensed BASE-36
+    
+      rus8uv unap5a wandnc b4w4bb w0i4m0 cbrwq0 ummn4n f2by50 ruttb1 way74h 2vvuyg 
+      wat041 udi3dh rigjo7 2saoaj
+    
+  VERSION
+    Major.Minor.Bugfix.Patch
+    1.0.0.0
+
+*/
+
+function _flags(n){
+  for(i=0;i<n;i++){
+    this.push('0x'+Math.pow(2,i).toString(16))
+  }
+}
+_flags.prototype = []
+
+var oscpu = window.navigator.oscpu.match(64)?64:32
+
+var Z = {
+  platform : oscpu,
+  nPC : (oscpu==64)?16e18:4e12,
+  nPC_overflow : (oscpu==64)?16e18:4e12,
+  flag : new _flags(oscpu),
+  _byte: new _flags(64)
+}
+
+function g_suffix_tree(o,a,i,bit){
+  var result = {}
+  if(i++<a.length){
+    result[a[i]&1] = g_suffix_tree(o,a,i,bit)
+  }
+  else{
+    result[a[i]&1] = bit
+  }
+  return result
+}
+
+function _kmap(){
+  var self = this
+  this.bit = 1
+  this.result = {}
+  this.tick = 0
+  this.optimize = function(_byte_){
+    Z._byte.map(function(mask,i,me){
+      var bit = (_byte_ & mask)>>i
+      if(bit==self.bit){
+        var bitbuff = self.tick.toString(2).split('') // MSB[0]
+        // normalize length
+        while(bitbuff.length<me.length-1){
+          bitbuff.unshift(0)
+        }
+        self.result = g_suffix_tree(self.result,bitbuff,0,self.bit)
+      }
+      self.tick++
+    })
+    kmin = self.result
+    return kmin
+  } // optimize
+  this.optimize_stage2 = function(bitmap){
+    var params = bitmap.split(/\"+/g)
+    var bit = 1
+    var kmin = this[bit] = params[1].split('::').map(
+      function(w,j){
+        var isInitialized = (bit in self)
+        if(!isInitialized){
+          self[bit] = {}
+        }
+        var indexInitialized = (j in self[bit])
+        var hasaConflict = (w != self[bit][j])
+        if(indexInitialized && hasaConflict){
+          var tick = '_36.'+self.tick.toString(36)
+          var u = self[bit][j]
+          var hasScope = v = u.match(/\{.*\}/)
+          if(hasScope){
+            v = v[0].split('|')
+            var matchesLHS = v_lhs = v[0].match(/\{/)
+            var matchesRHS = v_rhs = v[1].match(/,\}/)
+            if(matchesLHS && !(w&1)){
+              var has_lhs_val = v[0].match(/0/g)
+              var has_lhs_range = v[0].match(/,/g)
+              var re2 = new RegExp('[:,]'+tick+',','g')
+              var has_range_match = v[0].match(re2)
+              var s
+              if(has_lhs_range && !has_range_match){
+                s = ','+tick+','               
+                v[0] = v[0].replace(/,$/,s)
+              }
+              else
+              if(!has_lhs_range && !has_lhs_val){
+                s = '\{0:'+tick+','
+                v[0] = v[0].replace(/^\{/,s)
+              }
+              w = v.join('|')
+            }
+            else
+            if(matchesRHS && w&1){
+              var has_rhs_val = v[1].match(/^1/)
+              var has_rhs_range = v[1].match(/,/g)
+              var re2 = new RegExp(',?'+tick+',','g')
+              var has_range_match = v[1].match(re2)
+              var s
+              if(has_rhs_range && !has_range_match){
+                s = ','+tick+',}'               
+                v[1] = v[1].replace(/,\}/,s)
+              }
+              else
+              if(!has_rhs_range && !has_rhs_val){
+                s = '1:'+tick+',}'
+                v[1] = v[1].replace(/.*/g,s)
+              }
+              w = v.join('|')
+            }
+          }
+          else{
+            if(w&1){
+              w = '{'+u+'|'+w+':'+tick+',}'
+            }
+            else{
+              w = '{'+w+':'+tick+',|'+u+'}'            
+            }
+          }
+        }
+        return w
+      })
+    this.tick++
+    return kmin.join('::')  
+  }
+}
+_kmap.prototype = {}
+
+var _16k_codec = new Worker("16K_codec_Worker.1.js")
+
+_16k_codec.addEventListener(
+  "message",
+  function(e){
+  },"16K_codec.htm")
+
+var charSet = {}
+
+"1234567890`~!@#$%^&*()-_=+\\;:'\"|,<.>/?{}[]abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\t\n "
+.split("")
+.map(function(w){
+  charSet[w.charCodeAt()] = w
+})
+
+Object.prototype.toHex = function(){
+  return this < 16 ? '0'+this.toString( 16 ) : this.toString( 16 )
+}
+XMLHttpRequest.prototype._num2bytes = function(sData) {
+  return(new Uint8Array(sData.length).map(
+    function(w,nIdx){
+      return (w & 0xff)
+    })
+  )
+}
+XMLHttpRequest.prototype._ch2bytes = function(sData) {
+  /* send as ArrayBufferView...: */
+  /* ...or as ArrayBuffer (legacy)...:*/
+  // this.send(ui8Data)
+  // this.send(ui8Data.buffer)
+  return(new Uint8Array(sData.length).map(
+    function(w,nIdx){
+      return (sData.charCodeAt(nIdx) & 0xff)
+    })
+  )
+}
+function ByteStream(code_editor,meta_editor,lstatus){
+  var self = this
+  this.url = ""
+  this.urlSave = ""
+  this.byteStream = 0x00
+  this.codeStream = 0x00
+  this.metaStream = ""
+  this.code_editor = code_editor
+  this.meta_editor = meta_editor
+  this.meta_editor.kmap = [new _kmap()]
+  this.meta_editor.kmap.parent = this.meta_editor.kmap
+  this.status_window = lstatus
+  this.scrollDirective = 1840*2 // 40 lines x 46 columns = 1840 bytes visible //
+  this.byteScrollTop = 1840*2+1
+  this.metaScrollTop = 1840*2+1
+  this.byteScroll_pixelTop = 0
+  this.metaScroll_pixelTop = 0
+  this.proceed = false
+  this.callback = function(){
+    var a = [
+      function(){
+        try{
+          if(self.byteScroll_pixelTop+self.byteScrollTop<self.codeStream.length){
+            var stride = self.byteScroll_pixelTop+self.byteScrollTop
+            self.code_editor.value += self.codeStream.slice(self.byteScroll_pixelTop,stride).join(" ")
+            self.byteScroll_pixelTop += self.byteScrollTop          
+          }
+          else
+          if((self.byteScroll_pixelTop+self.byteScrollTop>=self.codeStream.length) && 
+            (self.byteScroll_pixelTop<self.codeStream.length)){
+            var stride = self.codeStream.length
+            self.code_editor.value += self.codeStream.slice(self.byteScroll_pixelTop,stride).join(" ")
+            self.byteScroll_pixelTop += self.byteScrollTop
+          }
+        }
+        catch(e){
+          console.log(e)        
+        }
+      },
+      function(){
+        try{
+          var result = []
+          var offset = 0
+          self.metaStream.slice(0).map(
+            function(_byte_,i,me){
+              if(i==offset){
+                var m0 = (me[i+4]<<0) || 0
+                var m1 = (me[i+3]<<8) || 0
+                var m2 = (me[i+2]<<16) || 0
+                var m3 = (me[i+1]<<24) || 0
+                var m4 = (_byte_<<32) || 0
+                result.push((m4+m3+m2+m1+m0).toString(36))
+                offset += 5
+              }
+            })
+            self.meta_editor.value = result.join(" ")
+          self.proceed = false
+        }
+        catch(e){
+          console.log(e)
+        }
+      },
+    ]
+    if(self.proceed){
+      a.map(function(w){
+        return w()
+      })
+    }
+  }
+  setInterval(this.callback,1)
+}ByteStream.prototype = {}
+
+ByteStream.prototype.__byteStream__ = function (putget){
+  var self = this
+  var xhr = new XMLHttpRequest()
+  var async = true
+  if(putget === "GET"){
+    xhr.open(putget,this.url,async)
+    xhr.responseType = "arraybuffer"
+    xhr.onreadystatechange = function(e){
+      var banner = [
+        function(){
+          return "Processing file..." // 0 UNSENT
+          }, 
+        function(){
+          return "Opening file..."    // 1 OPENED
+          },
+        function(){
+          return "Initializing..."    // 2 HEADERS_RECEIVED
+          },
+        function(v){
+          var status = {
+            PUT:function(){
+              return "Saving file..."
+              },
+            GET:function(){
+              return "Loading file..."
+              },
+            default:function(w){
+              var msg = {
+                PUT:"LOAD",
+                GET:"SAVE",
+                }
+              return Error("Unable to complete "+msg[v]+" operation.")
+              },
+          }
+          return status[v]() || status.default(v)    // 3 LOADING
+          },
+        function(v){ 
+          self.byteStream = self.metaStream = new Uint8Array( xhr.response )
+          self.codeStream = new Array()
+          self.byteStream.map(
+            function(w,i){
+              var v = w.toHex()
+              self.codeStream[i] = v
+              return w
+            })
+          self.byteScroll_pixelTop = 0
+          self.metaScroll_pixelTop = 0
+          self.proceed = true
+          return "Ready"  // 4 DONE
+          },              
+      ]
+      self.status_window.innerHTML = banner [ xhr.readyState ] (putget) || 
+      Error("ByteStream::__byteStream__ - Failed - xhr.readyState :",xhr.readyState,"| putget :",putget,"| Please try again.")
+    }
+    xhr.send()
+  }
+  else
+  if(putget === "POST"){
+    xhr.open(putget,"hexeditor.py",async)
+    if(code00.checked){
+      xhr.send(xhr._num2bytes(self.code_editor.value.split(/\s+/g)))
+    }
+    else
+    if(code01.checked){
+      var formData = new FormData()
+      xhr.send(self.meta_editor.value)
+    }
+    else
+    if(code02.checked){
+      xhr.send(xhr._ch2bytes(self.meta_editor.value))
+    }
+  }
+}
+
+// 16 K decode
+ByteStream.prototype.openDumpStream = function (w){
+  try{
+    if(w && w.name && (w.name != this.url)){
+      this.url = w.name
+      this.__byteStream__('GET')
+    }
+    else
+    if(w && w.name){
+      this.byteScroll_pixelTop = this.metaScroll_pixelTop = 0
+      this.proceed = true
+    }
+  } 
+  catch(e){
+    console.log(e)
+  }
+}
+
+// 16 K encode
+ByteStream.prototype.openUnDumpStream = function (w){
+  try{
+    if(w && w.name && (w.name != this.url)){
+      this.url = w.name
+      this.__byteStream__('GET')
+    }
+    else
+    if(w && w.name){
+      this.byteScroll_pixelTop = this.metaScroll_pixelTop = 0
+      this.proceed = true
+    }
+  } 
+  catch(e){
+    console.log(e)
+  }
+}
+
+ByteStream.prototype.saveDumpStream = function (w){
+  try{
+    if(w && w.name){
+      this.urlSave = w.name
+      this.__byteStream__('POST')
+    }
+  } 
+  catch(e){
+    console.log(e)
+  }
+}
+
+</script>
+</head>
+<br>
+<input id=btnStream type=file /><br>
+<br>
+<div>
+<input id=btnDump type=button value="decode 16K" /> <input id=btnUnDump type=button value="encode 16K" /> | <input id=btnClear type=button value="clear source window"/> 
+<div id=loadstatus style="float : right"> Ready</div>
+</div>
+<br>
+<div>
+<textarea id=byteresult name=area00></textarea>
+<textarea id=metaResult name=area01 style="width : 24%;"></textarea>
+</div>
+<input id=btnSave type=button value=" Save " /><input id=btnSaveStream type=file />
+<input id=code00 type="radio" checked=TRUE onclick="code01.checked=code02.checked=false"/> <label>byte code</label> | 
+<input id=code01 type="radio" onclick="code00.checked=code02.checked=false"/> <label>text-only</label> |
+<input id=code02 type="radio" onclick="code00.checked=code01.checked=false"/> <label>text as byte code</label>
+<footer>
+
+<script>
+
+var __file__ = new ByteStream(byteresult, metaResult, loadstatus)
+ 
+input:onclick = function(e){
+  var __status__ = {
+    "btnDump" : function(){
+        __file__.openDumpStream(btnStream.files[0])
+        },
+    "btnUnDump" : function(){
+        __file__.openUnDumpStream(btnStream.files[0])
+        },
+    "btnSave" : function(){
+        __file__.saveDumpStream(btnSaveStream.files[0])
+        },
+    "btnClear" : function(){
+        __file__.proceed = false
+        byteresult.value = ''
+        metaResult.value = ''
+        },
+  }
+  if(__status__[e.target.id]){
+    __status__[e.target.id]()
+  }
+}
+
+byteresult.addEventListener("scroll", 
+  function(e){
+    if(e.target.id == 'byteresult'){
+      metaResult.scrollTop = e.target.scrollTop
+    }
+  })
+
+metaResult.addEventListener("scroll", 
+  function(e){
+    if(e.target.id == 'metaResult'){
+      byteresult.scrollTop = e.target.scrollTop
+    }
+  })
+
+btnSave:click = function(w){
+  alert(this.files[0].name)
+}
+</script>
+
+</footer>
+</html>

@@ -1,0 +1,38 @@
+<html xmlns="http://www.w3.org/1999/xhtml" hasBrowserHandlers="true">
+<head>
+<title>Fact! tables gen 1.0.0.0</title>
+<meta charset="utf-8">
+<style>
+textarea#presult {
+  width : 73%; 
+  height : 83%; 
+  overflow : auto;
+  font-style : monospace;
+  font-size : 10pt;
+  font-color : #202020;
+}
+</style>
+<script>
+
+var pw = new Worker("factorial_Worker.js")
+pw.addEventListener("message",function(e){
+  if(e.data.src === "Math.factorialsUp2N"){
+    var factorial = e.data.factorialsUp2N
+    presult.value = "\tfactorial\n"
+    presult.value += JSON.stringify(factorial,0,1)
+  }
+},"factorial_tables_generator.htm")
+
+function pgen(){
+  var N = 1e3//449//171
+  pw.postMessage({tgt:"Math.factorialsUp2N",value:N})
+  presult.value = "Working..."
+}
+
+</script>
+</head>
+<body>
+<input type=button value="Generate fact! tables" onclick="pgen()"/>  <input type=button value="clear source window" onclick="javascript:presult.value=''"/> <br>
+<textarea id=presult></textarea>
+<body>
+</html>

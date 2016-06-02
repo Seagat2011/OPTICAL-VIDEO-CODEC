@@ -1,0 +1,16 @@
+<html xmlns="http://www.w3.org/1999/xhtml" hasBrowserHandlers="true">
+<head>
+<title>Strip engine 1.0.0.0</title>
+<meta charset="utf-8">
+<script>
+
+input:onclick = function(){
+  result.value = symbols.value.replace(/(\n\s*\n)+/g,"\n")
+}
+
+</script>
+</head>
+<textarea id=symbols style="width : 100%; height : 45%;"></textarea><br><br>
+<textarea id=result style="width : 100%; height : 45%;"></textarea>
+<input type=button value=Strip />
+</html>

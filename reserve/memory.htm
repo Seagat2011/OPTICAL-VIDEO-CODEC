@@ -1,0 +1,340 @@
+<html xmlns="http://www.w3.org/1999/xhtml" hasBrowserHandlers="true">
+<head>
+<title>Game engine 1.0.0.0</title>
+<meta charset="utf-8">
+<script>
+
+var g_init = true 
+
+var g_stacksize = 2
+
+var g_placeholders = 2
+
+var g_valuePlaceholders = 17 // 3:x:17 (21 max w/ appending 0's), eg 10^3 => 300 matches ie 150 cells 
+
+var g_valuePlaceholderIcons = '-'
+
+Object.prototype._placeholders = -1
+
+Object.prototype._valuePlaceholders = -1
+
+Object.prototype._valuePlaceholderIcons = '-'
+
+Object.prototype._genModulus = function(_mult,_rep)
+{
+  return (Math.pow(_mult,_rep)-Math.pow(_mult,_rep-1)-1)
+}
+
+Object.prototype._genRandomValue = function()
+{
+  var ret
+  var _00 = Math.pow(10,g_valuePlaceholders-1)        // 999..
+  var _01 = Math.pow(10,g_valuePlaceholders)          // 10000...
+  var _02 = this._genModulus(10,g_valuePlaceholders)  // modulator
+  do {
+    ret = _00+Math.round((_01*Math.random())%_02)     // 999.. < x < 10000..
+  } while(this._unavailable[ret]);
+  this._unavailable[ret] = 1
+  return ret
+}
+
+Object.prototype._genRandomCell = function()
+{
+  var ret
+  var tmp
+  do {
+    ret = Math.floor((100*Math.random()%64)) // -1 < x < 64
+    tmp = ret._toCellID(this._placeholders)
+  } while(this._unavailable[tmp]);
+  this._unavailable[tmp] = 1
+  return ret
+} 
+
+Object.prototype._toInteger = function()
+{
+  return (this.replace(/_/gi,'')*1)
+}
+
+Object.prototype._toString = function(n)
+{ 
+  var s
+  var num = this
+  try {
+    var tmp = Math.max(Math.abs(num),1)
+    if(num<0){
+      throw new Error('[Object.prototype._toString]')
+    }
+    s = num.toString()
+    var N = Math.pow(10,n-1)
+    while (tmp<N) {
+      s = '0'+s
+      tmp *= 10
+    }
+  }
+  catch (e) {
+    console.log(e)
+    throw new Error('[Object.prototype._toString]')
+  }
+  return s
+}
+
+Object.prototype._toCellID = function(n)
+{
+  return '_'+this._toString(n)
+}
+
+Object.prototype._matchesCell = function(rhs)
+{
+  var ret = false
+  if(this._attr.isActive && rhs._attr.isActive)
+  {
+    ret = true
+  }
+  return ret
+}
+
+Object.prototype._unavailable = {
+}
+
+Object.prototype.lockCell = function()
+{
+  this._attr.isActive = false
+  this._attr.isLocked = true
+}
+
+Object.prototype._stack = []
+
+Object.prototype._stackSize = -1
+
+Object.prototype.findMatch = function(obj)
+{
+  var lhs = obj.id
+  var rhs = this[lhs]._pair.rhs._toCellID(this._placeholders)
+  if(this[rhs]._matchesCell(this[lhs])){
+    this[rhs].lockCell()
+    this[lhs].lockCell()
+  }
+}
+
+Object.prototype.setInactive = function()
+{
+  var ret = false
+  if(this._attr.isLocked == false){
+    if(this._attr.isActive){
+      ret = true
+      this._attr.isActive = false
+      this.obj.textContent = this.parent._valuePlaceholderIcons
+      this.parent._stack.pop()
+    }
+  }
+  return ret
+}
+
+Object.prototype.setActive = function()
+{
+  var ret = false
+  if(this._attr.isLocked == false){
+    if(this._attr.isActive == false){
+      ret = true
+      this._attr.isActive = true
+      this.obj.textContent = this._attr.row_value
+      this._stack.push(this.obj.id)
+    }
+  }
+  return ret
+}
+
+Object.prototype.get_status = function(obj)
+{
+  if(this[obj.id]._attr.noHover){
+    if(this[obj.id]._attr.isActive || this[obj.id].setActive()){
+      this.findMatch(obj)
+    }
+  }
+  else{
+    this[obj.id].setInactive()
+  }
+}
+
+Object.prototype.addCell = function(cell)
+{
+  var ret = false
+  var _lhs_ = cell.id._toInteger()
+  var lhs = cell.id
+  if(this[lhs] == undefined) {
+    ret = true
+    function attr(v) { 
+      this.row_value = v
+      this.isActive = false
+      this.isLocked = false 
+      this.noHover = false
+    }
+    this._unavailable[lhs] = 1
+    var val = this._genRandomValue()._toString(this._valuePlaceholders)
+    var _rhs_ = this._genRandomCell()
+    var rhs = _rhs_._toCellID(this._placeholders)
+    this[lhs] = {}
+    this[lhs].obj = cell
+    this[lhs].parent = this
+    this[lhs]._pair = { rhs : _rhs_, lhs : _lhs_ }
+    this[lhs]._attr = new attr(val)
+    this[rhs] = {}
+    this[rhs].obj = document.getElementById(rhs)
+    this[rhs].parent = this
+    this[rhs]._pair = { rhs : _lhs_, lhs : _rhs_ }
+    this[rhs]._attr = new attr(val)
+  }
+  return ret
+}
+
+Object.prototype.updateCell = function(obj)
+{
+  var ret = true
+  this.addCell(obj)
+  return ret
+}
+
+Object.prototype._zeroStack = function()
+{
+  while(this._stack.length){
+    this._stack.pop()
+  }
+}
+
+Object.prototype._zeroEntries = function()
+{
+  for(var i in this){
+    if(i.match(/\d+/gi)){
+      try{
+        this[i].obj.textContent = this._valuePlaceholderIcons
+      } catch(e) {
+        console.log(e)
+      }
+      delete this[i]
+    }
+  }
+}
+
+Object.prototype._zeroMemory = function()
+{
+  for(var i in this._unavailable){
+    if(this._unavailable.hasOwnProperty(i)){
+      delete this._unavailable[i]
+    }
+  }
+}
+
+Object.prototype._flush = function()
+{
+  this._zeroStack()
+  this._zeroEntries()
+  this._zeroMemory()
+}
+
+Object.prototype.refresh = function(a,b,c,d){
+  this._stacksize = a
+  this._placeholders = b
+  this._valuePlaceholders = c
+  this._valuePlaceholderIcons = d
+  this._flush()
+}
+
+Object.prototype.dup = function(n,w){
+  return new Array(n).fill(w).join('')
+}
+
+var g_sdup = this.dup(g_valuePlaceholders,g_valuePlaceholderIcons)
+
+var game_status = {
+}
+
+function new_puzzle()
+{
+  if(g_init){
+    g_init = false
+    var o = document.getElementsByTagName('cell')
+    for(var i in o){ 
+      if(o.hasOwnProperty(i)){
+        o[i].textContent = g_sdup
+      } 
+    }
+  }
+  game_status.refresh(
+    g_stacksize,
+    g_placeholders,
+    g_valuePlaceholders,
+    g_sdup)
+}
+
+cell:onclick = function(e)
+{
+  if(e.target.nodeName == 'CELL'){
+    game_status.updateCell(e.target)
+    if(!game_status[e.target.id]._attr.isLocked){
+      game_status[e.target.id]._attr.noHover = !game_status[e.target.id]._attr.noHover
+      game_status.get_status(e.target)
+    }
+  }
+}
+
+cell:onmouseover = function(e)
+{
+  if(e.target.nodeName == 'CELL'){
+    game_status.updateCell(e.target)
+    if(
+    (game_status[e.target.id]._attr.noHover == false) && 
+    (!game_status[e.target.id]._attr.isLocked)){
+      game_status[e.target.id].setActive()
+    }
+  }
+}
+
+cell:onmouseout = function(e)
+{
+  if(e.target.nodeName == 'CELL'){
+    if(
+    (game_status[e.target.id]._attr.noHover == false) && 
+    (!game_status[e.target.id]._attr.isLocked)){
+      game_status[e.target.id].setInactive()
+    }
+  }
+}
+
+</script>
+<style>
+
+div {
+  float:block left;
+  padding: 4px;
+}
+cell {
+  font-style:monospace;
+  font-size:12px;
+  background-color: #eee;
+  float: block left;
+  padding: 4px;
+}
+cell:hover {
+  cursor: pointer; // beam; // crosshair; // pointer;
+  color: #fff;
+  background-color: #4e4e4e;
+}
+
+</style>
+</head>
+<body onload='new_puzzle()'>
+<div>
+MEMORY 8 x 8 <br><br>
+<cell id=_00>----</cell><cell id=_01>----</cell><cell id=_02>----</cell><cell id=_03>----</cell><cell id=_04>----</cell><cell id=_05>----</cell><cell id=_06>----</cell><cell id=_07>----</cell><br><br>
+<cell id=_08>----</cell><cell id=_09>----</cell><cell id=_10>----</cell><cell id=_11>----</cell><cell id=_12>----</cell><cell id=_13>----</cell><cell id=_14>----</cell><cell id=_15>----</cell><br><br>
+<cell id=_16>----</cell><cell id=_17>----</cell><cell id=_18>----</cell><cell id=_19>----</cell><cell id=_20>----</cell><cell id=_21>----</cell><cell id=_22>----</cell><cell id=_23>----</cell><br><br>
+<cell id=_24>----</cell><cell id=_25>----</cell><cell id=_26>----</cell><cell id=_27>----</cell><cell id=_28>----</cell><cell id=_29>----</cell><cell id=_30>----</cell><cell id=_31>----</cell><br><br>
+<cell id=_32>----</cell><cell id=_33>----</cell><cell id=_34>----</cell><cell id=_35>----</cell><cell id=_36>----</cell><cell id=_37>----</cell><cell id=_38>----</cell><cell id=_39>----</cell><br><br>
+<cell id=_40>----</cell><cell id=_41>----</cell><cell id=_42>----</cell><cell id=_43>----</cell><cell id=_44>----</cell><cell id=_45>----</cell><cell id=_46>----</cell><cell id=_47>----</cell><br><br>
+<cell id=_48>----</cell><cell id=_49>----</cell><cell id=_50>----</cell><cell id=_51>----</cell><cell id=_52>----</cell><cell id=_53>----</cell><cell id=_54>----</cell><cell id=_55>----</cell><br><br>
+<cell id=_56>----</cell><cell id=_57>----</cell><cell id=_58>----</cell><cell id=_59>----</cell><cell id=_60>----</cell><cell id=_61>----</cell><cell id=_62>----</cell><cell id=_63>----</cell><br><br>
+<br><br>
+<input id=refresh type=button value='New puzzle' onclick='new_puzzle()' />
+</div>
+</body>
+</html>
