@@ -1,10 +1,151 @@
 # OPTICAL-VIDEO-CODEC
-    A video codec implementation based on principles of quantum computing
+    An video codec implementation based on principles of quantum computing
        
+    Q-REGISTER => Quantum Energy-Well ( nano-scale split-ring resonators (SRRs) using photonic metamaterial
+
+
+    TECHNIQUE CLASSIFICATION
+
+    - Black-Hole Computing, Tensor Computing
+
+
+    REGISTERS (INDIVIDUAL OPTICAL CHANNELS)
+
+    - IF  : Instruction-Fetch | Decode
+    - EX  : Execute (Set & Test ALU Flags)
+
+
+    EXECUTION PATHWAYS
+
+    - IF => EX
+    - IF <=> EX
+
+      Given <=> indicates => with EX modified (write-back emulation)
+
+    REGISTER-IF-ARCHITECTURE
+
+    - At each IF stage, all required operands are encoded as constituent spectral-components of the MasterOperand
+    - There are two (2) IF fields : [i,j] => [Holograph-Type-Register,Q-Register] => [Flags,MasterOperand] => [[ResonanceFunction_0,...,ResonanceFunction_N],MasterOperand]
+    - Each ResonanceFunction, within IF, is essentially an optical circuit, distilled in a hologram, which generates constructive interference when TRUE
+
+
+    REGISTER-EX-ARCHITECTURE
+
+    - There is one (1) field : [i] => [ALU] => [Q-Register,Q-Register] => [IF::Flags,iResult] => [IF::Flags,[iFlags,iMasterOperand]]
+    - At each EX stage
+
+      1.  IF::Flags is fed-forward to EX::ALU::IF::iFlags and all ResonanceFunctions executed
+      2.  ResonanceFunctions are executed, in parallel, and stored in EX::ALU::iResult::iMasterOperand
+      3.  ResonanceFunctions result-flags are fed to EX::ALU::iResult::iFlags
+      4.  EX::ALU::iResult::iFlags is compared to EX::ALU::IF::Flags
+      5.  (see EXECUTION PATHWAYS)
+
+        EXECUTION PATHWAYS
+
+        - if EX::ALU::iResult::iFlags != EX::ALU::IF::Flags then
+            IF => EX
+        - else if EX::ALU::iResult::iFlags == EX::ALU::IF::Flags then
+            IF <=> EX (i.e. retain EX::ALU::iResult::iMasterOperand as spectral-component of next IF::MasterOperand)(essentially an emulated writeback (WB) stage)
+
+
+    IF::FLAG::ResonanceFunction states
+
+    - 0       (off)
+    - variant (0 < x < 1)
+    - 1       (Saturation/Infinity)
+    - [XXX]   (Pass-through lens/dont-care)
+
+    SCENARIO - IMPLEMENTING CONDITIONAL-CONSTRUCTS
+
+      GIVEN BITMAP
+
+        IF => [i,j] => [Flags,MasterOperand] => [[_0_,_1_,_2_,_3_],MasterOperand]
+
+        _0_ = [next-state flags][generated flags][masterOperand]
+        _1_ = [SP]
+        _2_ = [IP]
+        _3_ = [PC]
+
+
+      PSUEDO-CODE
+
+      1.  add 5+5 => [result]
+      2.  if [result] == 10 then 
+          subtract [result]-10 => [result]
+      3.  else if [result] < 10 then 
+          add ([result] + (subtract [result] - 10) + 10) => [result]
+      4.  else if [result] > 10 then
+          subtract ([result] - (add 10 + [result]) - 10) => [result]
+      5.  else
+          assign 0 => [result]
+      6.  end else-if
+      7.  end
+
+
+      PSUEDO-CODE (COMPILED)
+
+
+    SCENARIO - IMPLEMENTING LOOPING-CONSTRUCTS
+
+      GIVEN BITMAP
+
+        IF => [i,j] => [Flags,MasterOperand] => [[_0_,_1_,_2_,_3_],MasterOperand]
+
+        _0_ = 
+        _1_ = 
+        _2_ = 
+        _3_ = 
+
+
+      PSUEDO-CODE
+
+      1.  add 5+5 => [result]
+      2.  if [result] == 10 then 
+          subtract [result]-10 => [result]
+      3.  else if [result] < 10 then 
+          add ([result] + (subtract [result] - 10) + 10) => [result]
+      4.  else if [result] > 10 then
+          subtract ([result] - (add 10 + [result]) - 10) => [result]
+      5.  else
+          assign 0 => [result]
+      6.  end else-if
+      7.  end
+
+
+      PSUEDO-CODE (COMPILED)
+
+
+    RULES
+
+    - An Instruction holds exactly one (1) IF register, yet to be executed
+    - A Program contains one (1) or more Intructions
+    - A Program is distilled within a sub-hologram, called a Soliton
+    - A Complex Cell, is a hologram containing one (1) or more Solitons
+    - A Computing Crystal contains one (1) or more EX registers -- each having one (1) or more ALUs
+    - A Projector incorporates one (1) or more Complex-Cells, and one (1) or more Computing Crystals; 
+      along with an optional means of displaying, recording, and/or interacting with zero (0) or more final results
+    - A Library contains one (1) or more Projectors
+    - A Pantheon contains one (1) or more Libraries
+
+
+    NOTES
+
+    - Reliance on OPCODE-less logic, Clockless Logic
+    - All Complex Cells are preloaded into a Q-Register
+    - intermediate-results are not returned (speed)
+    - Complex Cells | Libraries | Pantheons etc are suspended in tinted quartz (reliability)
+    - Optical ALUs execute Computational Instruction Set Codings (CISC-based instruction sets), thus realizing a psuedo-deterministic flow-of-execution
+    - All ALU operations are executed in parallel
+    - IF::Flag-fields are composed of contiguous, holograph-based, resonance-detection functions and constructive interference generators
+    - All IF registers have four (4) stable states of operation : 0 (0), intermediate-values ( 0 < n < 1 ), Infinity (1), pass-through lens (XXX-dont care)
+    - All operands are combined -- reversibly -- into a MasterOperand
+    - All MasterOperands are stored in Q-Registers
+    - In actual implementation, Q-Registers store the result of [ IF (MasterOperand field value) / IF (MasterOperand field resolution) ]
+    - These architectures have direct application as all-optical Signal Processors and 1M (1000K) CODECS       
        
     OVERVIEW   
        
-    Envisioning an 8K CODEC providing an 8K video resolution on Quantum Hardware   
+    Envisioning an 8K CODEC providing an 8K video resolution on Traditional Hardware   
        
        
     NOTATION   
