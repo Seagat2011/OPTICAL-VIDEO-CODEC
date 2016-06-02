@@ -67,7 +67,7 @@
         _3_ = [PC]
 
 
-      PSUEDO-CODE
+      PSEUDO-CODE
 
       1.  add 5+5 => [result]
       2.  if [result] == 10 then 
@@ -82,7 +82,7 @@
       7.  end
 
 
-      PSUEDO-CODE (COMPILED)
+      PSEUDO-CODE (COMPILED)
 
 
     SCENARIO - IMPLEMENTING LOOPING-CONSTRUCTS
@@ -97,7 +97,7 @@
         _3_ = 
 
 
-      PSUEDO-CODE
+      PSEUDO-CODE
 
       1.  add 5+5 => [result]
       2.  if [result] == 10 then 
@@ -112,7 +112,7 @@
       7.  end
 
 
-      PSUEDO-CODE (COMPILED)
+      PSEUDO-CODE (COMPILED)
 
 
     RULES
@@ -142,6 +142,7 @@
     - All MasterOperands are stored in Q-Registers
     - In actual implementation, Q-Registers store the result of [ IF (MasterOperand field value) / IF (MasterOperand field resolution) ]
     - These architectures have direct application as all-optical Signal Processors and 1M (1000K) CODECS       
+       
        
     OVERVIEW   
        
@@ -276,7 +277,7 @@
       
     Theoretical worst-case decode performance is observed during a 100% color range 100% pixel swap  
     Although luma pixels are present -- they are only used for 64-bit boundary alignment ( they are not usually processed )  
-    Pixels along pixel-boundaries and their registers are default first color swap candidates, rather than core pixels within a   region  
+    Pixels along pixel-boundaries and their registers are default first color swap candidates, rather than core pixels within a region  
 
 
 
