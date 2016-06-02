@@ -4,7 +4,7 @@
        
     OVERVIEW   
        
-    Envisioning an H.268 CODEC providing an 8K video resolution    
+    Envisioning an 8K CODEC providing an 8K video resolution on Quantum Hardware   
        
        
     NOTATION   
